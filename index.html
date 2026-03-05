@@ -262,7 +262,10 @@ const data=await res.json()
 
 const users=data.users||[]
 
-const u=users.find(x=>x.id===uid && x.password===pass)
+const u = users.find(x =>
+String(x.id).trim() === uid &&
+String(x.password).trim() === pass
+)
 
 if(!u){
 document.getElementById("err").innerText="Wrong login"
