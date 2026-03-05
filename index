@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>CredNest CRM</title>
+
+<style>
+
+:root{
+--ios-blue:#007AFF;
+--ios-green:#34C759;
+--ios-gray:#F2F2F7;
+}
+
+body{
+margin:0;
+background:var(--ios-gray);
+font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",sans-serif;
+color:#111;
+}
+
+.header{
+height:50px;
+display:flex;
+align-items:center;
+justify-content:center;
+font-weight:600;
+font-size:18px;
+background:white;
+border-bottom:1px solid #eee;
+position:sticky;
+top:0;
+}
+
+.container{
+padding:14px;
+padding-bottom:80px;
+}
+
+.card{
+background:white;
+border-radius:14px;
+padding:14px;
+margin-bottom:12px;
+box-shadow:0 4px 10px rgba(0,0,0,0.05);
+}
+
+input,select{
+width:100%;
+padding:12px;
+border-radius:12px;
+border:1px solid #ddd;
+margin-bottom:10px;
+font-size:16px;
+}
+
+button{
+background:var(--ios-blue);
+color:white;
+border:none;
+padding:12px;
+border-radius:12px;
+font-size:16px;
+width:100%;
+}
+
+.lead{
+padding:10px 0;
+border-bottom:1px solid #eee;
+}
+
+.lead-name{
+font-weight:600;
+font-size:16px;
+}
+
+.stage{
+background:#eee;
+border-radius:10px;
+padding:3px 8px;
+font-size:11px;
+margin-left:6px;
+}
+
+.actions{
+display:flex;
+gap:6px;
+margin-top:6px;
+}
+
+.btn{
+flex:1;
+text-align:center;
+padding:8px;
+border-radius:10px;
+font-size:13px;
+}
+
+.call{background:var(--ios-green);color:white}
+.wa{background:#25D366;color:white}
+
+.tabbar{
+position:fixed;
+bottom:0;
+left:0;
+right:0;
+height:60px;
+background:white;
+border-top:1px solid #eee;
+display:flex;
+}
+
+.tab{
+flex:1;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+font-size:11px;
+}
+
+.tab.active{
+color:var(--ios-blue);
+font-weight:600;
+}
+
+.hidden{
+display:none;
+}
+
+.pipeline{
+display:flex;
+gap:10px;
+overflow-x:auto;
+}
+
+.stage-col{
+min-width:160px;
+background:white;
+border-radius:12px;
+padding:8px;
+}
+
+.stage-title{
+font-size:13px;
+font-weight:600;
+margin-bottom:6px;
+}
+
+.pipeline-lead{
+background:#f5f5f7;
+padding:6px;
+border-radius:8px;
+font-size:12px;
+margin-bottom:6px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div id="login">
+
+<div class="header">CredNest CRM</div>
+
+<div class="container">
+
+<div class="card">
+
+<h3>Login</h3>
+
+<input id="uid" placeholder="User ID">
+<input id="pass" type="password" placeholder="Password">
+
+<button onclick="login()">Login</button>
+
+<p id="err" style="color:red"></p>
+
+</div>
+
+</div>
+
+</div>
+
+
+
+<div id="app" class="hidden">
+
+<div class="header" id="title">Leads</div>
+
+<div class="container">
+
+<div id="screen-leads"></div>
+
+<div id="screen-pipeline" class="hidden"></div>
+
+<div id="screen-add" class="hidden">
+
+<div class="card">
+
+<h3>Add Lead</h3>
+
+<input id="name" placeholder="Customer Name">
+<input id="phone" placeholder="Phone">
+<input id="city" placeholder="City">
+
+<select id="loan">
+<option>Personal Loan</option>
+<option>Business Loan</option>
+<option>Home Loan</option>
+<option>LAP</option>
+</select>
+
+<input id="amount" placeholder="Loan Amount">
+
+<button onclick="addLead()">Add Lead</button>
+
+</div>
+
+</div>
+
+<div id="screen-profile" class="hidden">
+
+<div class="card">
+
+<h3 id="username"></h3>
+
+<p>Logged in</p>
+
+<button onclick="logout()">Logout</button>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="tabbar">
+
+<div class="tab active" onclick="nav('leads')">Leads</div>
+
+<div class="tab" onclick="nav('pipeline')">Pipeline</div>
+
+<div class="tab" onclick="nav('add')">Add</div>
+
+<div class="tab" onclick="nav('profile')">Profile</div>
+
+</div>
+
+</div>
+
+<script>
+
+const API="PASTE_APPS_SCRIPT_URL"
+
+let user=null
+let leads=[]
+
+async function loadUsers(){
+
+const res=await fetch(API+"?action=users")
+const data=await res.json()
+
+localStorage.setItem("users",JSON.stringify(data.users))
+
+}
+
+function login(){
+
+const uid=document.getElementById("uid").value
+const pass=document.getElementById("pass").value
+
+const users=JSON.parse(localStorage.getItem("users")||"[]")
+
+const u=users.find(x=>x.id===uid && x.password===pass)
+
+if(!u){
+
+document.getElementById("err").innerText="Wrong login"
+return
+
+}
+
+user=u
+
+document.getElementById("login").classList.add("hidden")
+document.getElementById("app").classList.remove("hidden")
+
+document.getElementById("username").innerText=u.name
+
+loadLeads()
+
+}
+
+function logout(){
+
+location.reload()
+
+}
+
+function nav(screen){
+
+document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"))
+event.target.classList.add("active")
+
+document.querySelectorAll("[id^=screen]").forEach(s=>s.classList.add("hidden"))
+
+document.getElementById("screen-"+screen).classList.remove("hidden")
+
+document.getElementById("title").innerText=screen.charAt(0).toUpperCase()+screen.slice(1)
+
+if(screen==="leads") renderLeads()
+
+if(screen==="pipeline") renderPipeline()
+
+}
+
+async function loadLeads(){
+
+const res=await fetch(API+"?action=leads")
+const data=await res.json()
+
+leads=data.leads.filter(l=>l.owner===user.id)
+
+renderLeads()
+
+}
+
+function renderLeads(){
+
+const box=document.getElementById("screen-leads")
+
+box.innerHTML=""
+
+leads.forEach(l=>{
+
+box.innerHTML+=`
+
+<div class="card lead">
+
+<div class="lead-name">
+
+${l.name}
+
+<span class="stage">${l.stage}</span>
+
+</div>
+
+<div>${l.phone} • ₹${l.amount}</div>
+
+<div class="actions">
+
+<a class="btn call" href="tel:${l.phone}">Call</a>
+
+<a class="btn wa" target="_blank" href="https://wa.me/${l.phone}">WhatsApp</a>
+
+</div>
+
+</div>
+
+`
+
+})
+
+}
+
+function renderPipeline(){
+
+const stages=["New","Called","Docs","Submitted","Approved"]
+
+const el=document.getElementById("screen-pipeline")
+
+let html=`<div class="pipeline">`
+
+stages.forEach(s=>{
+
+html+=`<div class="stage-col"><div class="stage-title">${s}</div>`
+
+leads.filter(l=>l.stage===s).forEach(l=>{
+
+html+=`<div class="pipeline-lead">${l.name}</div>`
+
+})
+
+html+=`</div>`
+
+})
+
+html+=`</div>`
+
+el.innerHTML=html
+
+}
+
+async function addLead(){
+
+const lead={
+
+action:"saveLead",
+
+id:Date.now().toString(),
+
+name:document.getElementById("name").value,
+
+phone:document.getElementById("phone").value,
+
+city:document.getElementById("city").value,
+
+loan_type:document.getElementById("loan").value,
+
+amount:document.getElementById("amount").value,
+
+stage:"New",
+
+source:"Direct",
+
+notes:"",
+
+created:new Date().toISOString(),
+
+updated:new Date().toISOString(),
+
+owner:user.id
+
+}
+
+await fetch(API,{
+
+method:"POST",
+
+body:JSON.stringify(lead)
+
+})
+
+loadLeads()
+
+nav("leads")
+
+}
+
+loadUsers()
+
+</script>
+
+</body>
+</html>
