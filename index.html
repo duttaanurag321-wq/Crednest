@@ -269,19 +269,33 @@ localStorage.setItem("users",JSON.stringify(data.users))
 
 }
 
-function login(){
+async function login(){
 
 const uid=document.getElementById("uid").value
 const pass=document.getElementById("pass").value
 
-const users=JSON.parse(localStorage.getItem("users")||"[]")
+const res = await fetch(API+"?action=users")
+const data = await res.json()
 
-const u=users.find(x=>x.id===uid && x.password===pass)
+const users = data.users
+
+const u = users.find(x => x.id === uid && x.password === pass)
 
 if(!u){
 
 document.getElementById("err").innerText="Wrong login"
 return
+
+}
+
+user = u
+
+document.getElementById("login").classList.add("hidden")
+document.getElementById("app").classList.remove("hidden")
+
+document.getElementById("username").innerText=u.name
+
+loadLeads()
 
 }
 
