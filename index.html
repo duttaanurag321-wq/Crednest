@@ -8,16 +8,10 @@
 
 <style>
 
-:root{
---ios-blue:#007AFF;
---ios-green:#34C759;
---ios-gray:#F2F2F7;
-}
-
 body{
 margin:0;
-background:var(--ios-gray);
 font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",sans-serif;
+background:#F2F2F7;
 color:#111;
 }
 
@@ -57,7 +51,7 @@ font-size:16px;
 }
 
 button{
-background:var(--ios-blue);
+background:#007AFF;
 color:white;
 border:none;
 padding:12px;
@@ -98,7 +92,7 @@ border-radius:10px;
 font-size:13px;
 }
 
-.call{background:var(--ios-green);color:white}
+.call{background:#34C759;color:white}
 .wa{background:#25D366;color:white}
 
 .tabbar{
@@ -122,7 +116,7 @@ font-size:11px;
 }
 
 .tab.active{
-color:var(--ios-blue);
+color:#007AFF;
 font-weight:600;
 }
 
@@ -229,8 +223,6 @@ margin-bottom:6px;
 
 <h3 id="username"></h3>
 
-<p>Logged in</p>
-
 <button onclick="logout()">Logout</button>
 
 </div>
@@ -265,17 +257,10 @@ async function login(){
 const uid=document.getElementById("uid").value.trim()
 const pass=document.getElementById("pass").value.trim()
 
-if(!uid || !pass){
-document.getElementById("err").innerText="Enter login details"
-return
-}
-
-try{
-
 const res=await fetch(API+"?action=users")
 const data=await res.json()
 
-const users=data.users || []
+const users=data.users||[]
 
 const u=users.find(x=>x.id===uid && x.password===pass)
 
@@ -293,11 +278,26 @@ document.getElementById("username").innerText=u.name
 
 loadLeads()
 
-}catch(e){
-
-document.getElementById("err").innerText="Server error"
-
 }
+
+function logout(){
+location.reload()
+}
+
+function nav(screen){
+
+document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"))
+event.target.classList.add("active")
+
+document.querySelectorAll("[id^=screen]").forEach(s=>s.classList.add("hidden"))
+
+document.getElementById("screen-"+screen).classList.remove("hidden")
+
+document.getElementById("title").innerText=screen.charAt(0).toUpperCase()+screen.slice(1)
+
+if(screen==="leads") renderLeads()
+
+if(screen==="pipeline") renderPipeline()
 
 }
 
@@ -321,20 +321,60 @@ box.innerHTML=""
 leads.forEach(l=>{
 
 box.innerHTML+=`
+
 <div class="card lead">
+
 <div class="lead-name">
+
 ${l.name}
+
 <span class="stage">${l.stage}</span>
+
 </div>
+
 <div>${l.phone} • ₹${l.amount}</div>
+
 <div class="actions">
+
 <a class="btn call" href="tel:${l.phone}">Call</a>
+
 <a class="btn wa" target="_blank" href="https://wa.me/${l.phone}">WhatsApp</a>
+
 </div>
+
 </div>
+
 `
 
 })
+
+}
+
+function renderPipeline(){
+
+const stages=["New","Called","Docs","Submitted","Approved"]
+
+const el=document.getElementById("screen-pipeline")
+
+let html=`<div class="pipeline">`
+
+stages.forEach(s=>{
+
+html+=`<div class="stage-col"><div class="stage-title">${s}</div>`
+
+leads.filter(l=>l.stage===s).forEach(l=>{
+
+html+=`<div class="pipeline-lead">${l.name}</div>`
+
+})
+
+html+=`</div>`
+
+})
+
+html+=`</div>`
+
+el.innerHTML=html
 
 }
 
@@ -343,17 +383,29 @@ async function addLead(){
 const lead={
 
 action:"saveLead",
+
 id:Date.now().toString(),
+
 name:document.getElementById("name").value,
+
 phone:document.getElementById("phone").value,
+
 city:document.getElementById("city").value,
+
 loan_type:document.getElementById("loan").value,
+
 amount:document.getElementById("amount").value,
+
 stage:"New",
+
 source:"Direct",
+
 notes:"",
+
 created:new Date().toISOString(),
+
 updated:new Date().toISOString(),
+
 owner:user.id
 
 }
@@ -365,8 +417,11 @@ body:JSON.stringify(lead)
 
 loadLeads()
 
+nav("leads")
+
 }
 
 </script>
+
 </body>
 </html>
